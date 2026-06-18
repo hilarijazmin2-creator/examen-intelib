@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen Virtual INTELIB</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;color:#fff}
+#screen-inicio,#screen-exam,#screen-monitor,#screen-resultado{display:none;min-height:100vh}
+#screen-inicio.active,#screen-exam.active,#screen-monitor.active,#screen-resultado.active{display:flex}
+
+/* INICIO */
+#screen-inicio{flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem 1rem;overflow-y:auto}
+.inst-header{display:flex;align-items:center;gap:1rem;margin-bottom:0.8rem;flex-wrap:wrap;justify-content:center}
+.inst-header img{width:70px;height:70px;border-radius:50%;border:3px solid rgba(0,212,255,0.4);object-fit:cover}
+.inst-info{text-align:left}
+.inst-name{font-size:0.85rem;font-weight:700;color:#00d4ff;line-height:1.3}
+.inst-sub{font-size:0.72rem;color:#94a3b8}
+.title-main{font-size:1.6rem;font-weight:700;background:linear-gradient(90deg,#00d4ff,#a855f7,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.3rem;text-align:center}
+.subtitle{font-size:0.82rem;color:#94a3b8;margin-bottom:1.2rem;text-align:center}
+.info-box{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.8rem 1.5rem;margin-bottom:1.2rem;display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center}
+.info-item{text-align:center}
+.info-num{font-size:1.6rem;font-weight:700;color:#00d4ff}
+.info-lbl{font-size:0.7rem;color:#94a3b8}
+.mode-cards{display:flex;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap;justify-content:center}
+.mode-card{background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:14px;padding:1.2rem 1.5rem;cursor:pointer;transition:all 0.3s;min-width:170px;text-align:center}
+.mode-card:hover{border-color:#a855f7;background:rgba(168,85,247,0.1);transform:translateY(-3px)}
+.mode-card.selected{border-color:#00d4ff;background:rgba(0,212,255,0.1)}
+.mode-icon{font-size:1.8rem;margin-bottom:0.4rem}
+.mode-title{font-size:1rem;font-weight:600}
+.mode-desc{font-size:0.75rem;color:#94a3b8;margin-top:0.2rem}
+
+/* Formulario estudiante */
+.form-panel{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;width:100%;max-width:520px}
+.form-title{font-size:0.78rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+.form-group{display:flex;flex-direction:column;gap:0.3rem}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:0.72rem;color:#94a3b8}
+.form-input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.5rem 0.9rem;color:#fff;font-size:0.88rem;outline:none;width:100%}
+.form-input:focus{border-color:#a855f7}
+.form-input::placeholder{color:#475569}
+
+/* Panel docente */
+.est-panel{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;width:100%;max-width:520px}
+.est-panel-title{font-size:0.78rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.8rem}
+.est-input-row{display:flex;gap:0.6rem;margin-bottom:0.8rem}
+.est-input{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.5rem 0.9rem;color:#fff;font-size:0.88rem;outline:none}
+.est-input:focus{border-color:#a855f7}
+.btn-add{background:rgba(168,85,247,0.3);border:1px solid rgba(168,85,247,0.5);border-radius:8px;padding:0.5rem 1rem;color:#c084fc;cursor:pointer;font-size:0.82rem;white-space:nowrap}
+.btn-add:hover{background:rgba(168,85,247,0.5)}
+.est-list{display:flex;flex-wrap:wrap;gap:0.5rem}
+.est-tag{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:99px;padding:0.3rem 0.9rem 0.3rem 0.7rem;font-size:0.78rem;color:#67e8f9;display:flex;align-items:center;gap:0.4rem}
+.est-tag button{background:none;border:none;color:#67e8f9;cursor:pointer;font-size:1rem;opacity:0.6}
+.est-tag button:hover{opacity:1}
+.btn-start{background:linear-gradient(90deg,#a855f7,#00d4ff);border:none;color:white;font-size:1rem;font-weight:700;padding:0.85rem 2.5rem;border-radius:50px;cursor:pointer;transition:all 0.3s;letter-spacing:1px;margin-top:0.5rem}
+.btn-start:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(168,85,247,0.5)}
+
+/* EXAMEN */
+#screen-exam{flex-direction:column}
+.exam-header{background:rgba(0,0,0,0.3);padding:0.8rem 1.5rem;display:flex;align-items:center;gap:0.8rem;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.1);flex-wrap:wrap}
+.timer-box{border-radius:8px;padding:0.4rem 1rem;font-size:1.3rem;font-weight:700;font-family:monospace;min-width:90px;text-align:center}
+.tok{background:linear-gradient(90deg,#10b981,#34d399)}
+.twn{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.tdn{background:linear-gradient(90deg,#ef4444,#f87171)}
+.progress-wrap{flex:1;min-width:100px}
+.progress-label{font-size:0.7rem;color:#94a3b8;margin-bottom:3px}
+.progress-bar-bg{background:rgba(255,255,255,0.1);border-radius:99px;height:7px}
+.progress-bar-fill{height:7px;border-radius:99px;background:linear-gradient(90deg,#a855f7,#00d4ff);transition:width 0.5s}
+.q-counter{font-size:0.82rem;color:#94a3b8;white-space:nowrap}
+.btn-fin{background:linear-gradient(90deg,#f59e0b,#ef4444);border:none;color:white;font-size:0.82rem;font-weight:700;padding:0.45rem 1rem;border-radius:8px;cursor:pointer}
+.exam-body{flex:1;padding:1.5rem;overflow-y:auto;max-width:800px;margin:0 auto;width:100%}
+.cat-badge{display:inline-block;padding:0.28rem 0.9rem;border-radius:99px;font-size:0.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.9rem}
+.badge-gd{background:rgba(168,85,247,0.2);color:#c084fc;border:1px solid rgba(168,85,247,0.4)}
+.badge-la{background:rgba(251,146,60,0.2);color:#fb923c;border:1px solid rgba(251,146,60,0.4)}
+.q-num{font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem}
+.q-text{font-size:1.08rem;font-weight:600;line-height:1.6;margin-bottom:1.3rem;color:#f1f5f9}
+.options{display:flex;flex-direction:column;gap:0.65rem;margin-bottom:1.6rem}
+.opt-btn{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.8rem 1.1rem;cursor:pointer;text-align:left;color:#e2e8f0;font-size:0.9rem;transition:all 0.2s;display:flex;align-items:center;gap:0.7rem}
+.opt-btn:hover:not(:disabled){border-color:#a855f7;background:rgba(168,85,247,0.1)}
+.opt-btn.selected{border-color:#a855f7;background:rgba(168,85,247,0.2)}
+.opt-btn.correct{border-color:#10b981;background:rgba(16,185,129,0.2);color:#6ee7b7}
+.opt-btn.incorrect{border-color:#ef4444;background:rgba(239,68,68,0.15);color:#fca5a5}
+.opt-letter{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0}
+.fb-box{border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:1.4rem;font-size:0.86rem;line-height:1.6;display:none}
+.fb-box.show{display:block}
+.fb-ok{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#6ee7b7}
+.fb-bad{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5}
+.nav-btns{display:flex;justify-content:space-between;align-items:center;padding-bottom:2rem;flex-wrap:wrap;gap:0.5rem}
+.btn-nav{border:none;border-radius:10px;padding:0.6rem 1.3rem;font-size:0.86rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:rgba(255,255,255,0.08);color:#94a3b8}
+.btn-prev:hover{background:rgba(255,255,255,0.15);color:#e2e8f0}
+.btn-confirm{background:linear-gradient(90deg,#10b981,#00d4ff);color:white}
+.btn-next{background:linear-gradient(90deg,#a855f7,#00d4ff);color:white}
+
+/* MONITOR */
+#screen-monitor{flex-direction:column;padding:1.5rem;overflow-y:auto}
+.monitor-header{text-align:center;margin-bottom:1rem}
+.monitor-title{font-size:1.4rem;font-weight:700;color:#00d4ff}
+.monitor-subtitle{font-size:0.8rem;color:#94a3b8}
+.live-timer{font-size:2.6rem;font-weight:700;text-align:center;margin:0.5rem 0;font-family:monospace}
+.monitor-stats{display:flex;gap:0.8rem;margin-bottom:1.2rem;flex-wrap:wrap;justify-content:center}
+.stat-card{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.8rem 1.1rem;text-align:center;min-width:100px;border:1px solid rgba(255,255,255,0.08)}
+.stat-num{font-size:1.6rem;font-weight:700}
+.stat-lbl{font-size:0.68rem;color:#94a3b8;margin-top:0.2rem}
+.stu-table-wrap{width:100%;max-width:700px;margin:0 auto 1.2rem;overflow-x:auto}
+.stu-table{width:100%;border-collapse:collapse;font-size:0.83rem}
+.stu-table th{background:rgba(255,255,255,0.06);padding:0.55rem 0.8rem;text-align:left;font-weight:600;color:#94a3b8;border-bottom:1px solid rgba(255,255,255,0.08);white-space:nowrap}
+.stu-table td{padding:0.55rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle}
+.mini-prog-bg{background:rgba(255,255,255,0.08);border-radius:99px;height:5px;width:100px}
+.mini-prog-fill{height:5px;border-radius:99px;background:linear-gradient(90deg,#a855f7,#00d4ff);transition:width 0.5s}
+.s-pill{display:inline-block;padding:0.18rem 0.65rem;border-radius:99px;font-size:0.75rem;font-weight:700}
+.pg{background:rgba(16,185,129,0.2);color:#6ee7b7}
+.py{background:rgba(245,158,11,0.2);color:#fcd34d}
+.pr{background:rgba(239,68,68,0.2);color:#fca5a5}
+.pn{background:rgba(255,255,255,0.06);color:#94a3b8}
+.legend{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;font-size:0.78rem;color:#94a3b8;margin-bottom:0.8rem}
+.legend-item{display:flex;align-items:center;gap:0.4rem}
+.ldot{width:11px;height:11px;border-radius:3px}
+.monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:0.45rem;max-width:580px;margin:0 auto 1rem}
+.q-dot{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#64748b}
+.q-dot.aok{background:rgba(16,185,129,0.3);border-color:#10b981;color:#6ee7b7}
+.q-dot.abad{background:rgba(239,68,68,0.3);border-color:#ef4444;color:#fca5a5}
+
+/* RESULTADO */
+#screen-resultado{flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;overflow-y:auto}
+.res-icon{font-size:3.5rem;margin-bottom:0.8rem}
+.res-score{font-size:2.8rem;font-weight:700;margin-bottom:0.4rem}
+.res-label{font-size:0.95rem;color:#94a3b8;margin-bottom:1.2rem}
+.res-bd{display:flex;gap:0.7rem;margin-bottom:1.2rem;flex-wrap:wrap;justify-content:center}
+.rb-card{background:rgba(255,255,255,0.05);border-radius:12px;padding:0.9rem 1.1rem;min-width:110px;border:1px solid rgba(255,255,255,0.1)}
+.rb-num{font-size:1.4rem;font-weight:700}
+.rb-lbl{font-size:0.7rem;color:#94a3b8}
+.btn-pdf{background:linear-gradient(90deg,#ef4444,#f59e0b);border:none;color:white;font-size:0.95rem;font-weight:700;padding:0.75rem 2rem;border-radius:50px;cursor:pointer;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem}
+.btn-pdf:hover{transform:scale(1.04)}
+.btn-restart{background:linear-gradient(90deg,#a855f7,#00d4ff);border:none;color:white;font-size:0.95rem;font-weight:700;padding:0.75rem 2rem;border-radius:50px;cursor:pointer}
+.exp-btn{background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;font-size:0.82rem;font-weight:600;padding:0.55rem 1.4rem;border-radius:8px;cursor:pointer;margin-bottom:1rem}
+.exp-btn:hover{background:rgba(16,185,129,0.35)}
+</style>
+</head>
+<body>
+
+<!-- INICIO -->
+<div id="screen-inicio" class="active">
+  <div class="inst-header">
+    <img src="data:image/jpeg;base64,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" alt="Logo INTELIB">
+    <div class="inst-info">
+      <div class="inst-name">Instituto Técnico Superior de<br>Formación Profesional INTELIB</div>
+      <div class="inst-sub">Examen Virtual — Gestión Documental &amp; Leyes Archivísticas</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <div class="info-item"><div class="info-num">20</div><div class="info-lbl">Preguntas</div></div>
+    <div class="info-item"><div class="info-num">60</div><div class="info-lbl">Minutos</div></div>
+    <div class="info-item"><div class="info-num">10</div><div class="info-lbl">Por categoría</div></div>
+    <div class="info-item"><div class="info-num">100</div><div class="info-lbl">Puntos máx.</div></div>
+  </div>
+
+  <div class="mode-cards">
+    <div class="mode-card selected" onclick="selectMode('estudiante')" id="card-est">
+      <div class="mode-icon">🎓</div>
+      <div class="mode-title">Estudiante</div>
+      <div class="mode-desc">Responder el examen</div>
+    </div>
+    <div class="mode-card" onclick="selectMode('docente')" id="card-doc">
+      <div class="mode-icon">👨‍🏫</div>
+      <div class="mode-title">Docente</div>
+      <div class="mode-desc">Control &amp; monitoreo</div>
+    </div>
+  </div>
+
+  <!-- Formulario estudiante -->
+  <div class="form-panel" id="form-estudiante">
+    <div class="form-title">📝 Datos del Estudiante</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Nombre completo *</label>
+        <input class="form-input" id="f-nombre" placeholder="Ej. Juan Pérez Mamani" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">CI / Carnet *</label>
+        <input class="form-input" id="f-ci" placeholder="Ej. 7654321">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paralelo / Grupo</label>
+        <input class="form-input" id="f-paralelo" placeholder="Ej. A / Nocturno">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Carrera</label>
+        <input class="form-input" id="f-carrera" placeholder="Ej. Técnico Superior en Archivística">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Materia</label>
+        <input class="form-input" id="f-materia" placeholder="Ej. Gestión Documental">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input class="form-input" id="f-correo" type="email" placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel docente -->
+  <div class="est-panel" id="panel-docente" style="display:none">
+    <div class="est-panel-title">📋 Registro de Estudiantes</div>
+    <div class="est-input-row">
+      <input class="est-input" id="est-nombre" placeholder="Nombre completo..." onkeydown="if(event.key==='Enter')agregarEst()">
+      <button class="btn-add" onclick="agregarEst()">+ Agregar</button>
+    </div>
+    <div class="est-list" id="est-list"></div>
+  </div>
+
+  <button class="btn-start" onclick="iniciar()">COMENZAR ▶</button>
+</div>
+
+<!-- EXAMEN -->
+<div id="screen-exam">
+  <div class="exam-header">
+    <div id="timer" class="timer-box tok">60:00</div>
+    <div class="progress-wrap">
+      <div class="progress-label">Progreso</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="q-counter" id="q-counter">1 / 20</div>
+    <button class="btn-fin" onclick="confirmarFin()">Finalizar</button>
+  </div>
+  <div class="exam-body" id="exam-body"></div>
+</div>
+
+<!-- MONITOR -->
+<div id="screen-monitor">
+  <div class="monitor-header">
+    <div class="monitor-title">🖥️ Panel Docente — Control en Tiempo Real</div>
+    <div class="monitor-subtitle">Actualización automática cada segundo</div>
+  </div>
+  <div class="live-timer" id="monitor-timer">60:00</div>
+  <div class="monitor-stats">
+    <div class="stat-card"><div class="stat-num" id="m-res" style="color:#00d4ff">0</div><div class="stat-lbl">Respondidas</div></div>
+    <div class="stat-card"><div class="stat-num" id="m-ok" style="color:#10b981">0</div><div class="stat-lbl">Correctas</div></div>
+    <div class="stat-card"><div class="stat-num" id="m-bad" style="color:#ef4444">0</div><div class="stat-lbl">Incorrectas</div></div>
+    <div class="stat-card"><div class="stat-num" id="m-pts" style="color:#f59e0b">0</div><div class="stat-lbl">Puntos</div></div>
+    <div class="stat-card"><div class="stat-num" id="m-pen" style="color:#94a3b8">20</div><div class="stat-lbl">Pendientes</div></div>
+  </div>
+  <div class="stu-table-wrap" id="stu-table-wrap" style="display:none">
+    <table class="stu-table">
+      <thead><tr><th>#</th><th>Estudiante</th><th>Progreso</th><th>Nota</th><th>Estado</th></tr></thead>
+      <tbody id="stu-tbody"></tbody>
+    </table>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="ldot" style="background:#10b981"></div>Correcta</div>
+    <div class="legend-item"><div class="ldot" style="background:#ef4444"></div>Incorrecta</div>
+    <div class="legend-item"><div class="ldot" style="background:rgba(255,255,255,0.05)"></div>Sin responder</div>
+  </div>
+  <div class="monitor-grid" id="monitor-grid"></div>
+  <div style="text-align:center;margin-top:1rem">
+    <button class="exp-btn" onclick="exportarCSV()">⬇ Exportar CSV</button><br>
+    <button class="btn-restart" onclick="volverInicio()">← Volver</button>
+  </div>
+</div>
+
+<!-- RESULTADO -->
+<div id="screen-resultado">
+  <div class="res-icon" id="res-icon">🏆</div>
+  <div class="res-score" id="res-score"></div>
+  <div class="res-label" id="res-label"></div>
+  <div class="res-bd" id="res-bd"></div>
+  <button class="btn-pdf" onclick="generarPDF()">📄 Descargar mi resultado en PDF</button>
+  <button class="btn-restart" onclick="volverInicio()">↩ Nuevo Intento</button>
+</div>
+
+<script>
+const LOGO_B64 = "data:image/jpeg;base64,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";
+
+const PREGUNTAS = [
+  {cat:"GD",texto:"¿Qué se entiende por Gestión Documental?",ops:["Proceso de digitalizar únicamente documentos físicos","Conjunto de normas, técnicas y prácticas para administrar el flujo de documentos en una organización","Sistema exclusivo para archivar correos electrónicos","Método para destruir documentos obsoletos"],correcta:1,exp:"La Gestión Documental es el conjunto de normas, técnicas y prácticas para administrar el ciclo de vida de los documentos organizacionales."},
+  {cat:"GD",texto:"¿Cuál es el ciclo de vida de un documento?",ops:["Creación, distribución, uso, mantenimiento y disposición","Escaneo, almacenamiento y eliminación","Redacción, impresión y archivo","Recepción, clasificación y venta"],correcta:0,exp:"El ciclo de vida documental comprende: creación, distribución, uso, mantenimiento y disposición final."},
+  {cat:"GD",texto:"¿Qué es un expediente documental?",ops:["Un único documento de gran tamaño","Conjunto de documentos relacionados entre sí por un mismo asunto o trámite","Base de datos de imágenes","Registro de movimientos bancarios"],correcta:1,exp:"Un expediente es la unidad documental compleja formada por documentos relacionados con un mismo asunto o trámite administrativo."},
+  {cat:"GD",texto:"¿Qué significa la sigla ECM en Gestión Documental?",ops:["Electronic Content Management","Effective Content Methodology","Enterprise Compliance Management","Electronic Communication Module"],correcta:0,exp:"ECM (Enterprise Content Management) abarca la captura, gestión, almacenamiento y entrega de documentos e información."},
+  {cat:"GD",texto:"¿Qué es la Tabla de Retención Documental (TRD)?",ops:["Listado de documentos eliminados","Instrumento que establece el tiempo de conservación de cada serie documental","Registro de firmas autorizadas","Índice de precios de documentos impresos"],correcta:1,exp:"La TRD es el instrumento archivístico que establece los tiempos de retención y la disposición final de cada serie documental."},
+  {cat:"GD",texto:"¿Cuál de los siguientes NO es un principio básico de la archivística?",ops:["Procedencia","Orden original","Rentabilidad económica máxima","Integridad"],correcta:2,exp:"Los principios básicos son procedencia, orden original e integridad. La rentabilidad económica máxima no es un principio archivístico."},
+  {cat:"GD",texto:"¿Qué es un metadato en el contexto documental?",ops:["El contenido principal de un documento","Dato que describe y da contexto a otro dato o documento","Firma digital de un funcionario","Número de páginas de un archivo"],correcta:1,exp:"Los metadatos describen y proporcionan contexto sobre documentos: fecha, autor, tipo, versión, etc."},
+  {cat:"GD",texto:"¿Qué norma internacional regula la Gestión de Documentos?",ops:["ISO 9001","ISO 15489","ISO 27001","ISO 14001"],correcta:1,exp:"La ISO 15489 es la norma internacional específica para la gestión de documentos (Records Management)."},
+  {cat:"GD",texto:"¿Qué es la digitalización documental?",ops:["Crear documentos exclusivamente en formato PDF","Proceso de convertir documentos físicos a formato digital mediante escaneo u otros medios","Eliminar documentos físicos sin respaldo","Sistema de impresión masiva de expedientes"],correcta:1,exp:"La digitalización convierte documentos físicos a formato digital, preservando su contenido y estructura."},
+  {cat:"GD",texto:"¿Cuál es la función principal de un Sistema de Gestión Documental (SGD)?",ops:["Reemplazar al personal administrativo","Facilitar la creación, almacenamiento, recuperación y control de documentos en una organización","Generar automáticamente informes contables","Administrar únicamente el correo físico"],correcta:1,exp:"Un SGD facilita la creación, organización, almacenamiento, recuperación y control del flujo documental institucional."},
+  {cat:"LA",texto:"¿Qué ley regula el Sistema Nacional de Archivos en el Estado Plurinacional de Bolivia?",ops:["Ley N° 004 de Lucha Contra la Corrupción","Ley N° 477 del Sistema Nacional de Archivos","Ley N° 1178 de Administración y Control Gubernamentales","Decreto Supremo N° 23318"],correcta:1,exp:"La Ley N° 477 (30 dic. 2013) regula el Sistema Nacional de Archivos del Estado Plurinacional de Bolivia."},
+  {cat:"LA",texto:"¿Qué institución es la entidad rectora del Sistema Nacional de Archivos en Bolivia?",ops:["Ministerio de Economía y Finanzas Públicas","Archivo y Biblioteca Nacionales de Bolivia (ABNB)","Contraloría General del Estado","Ministerio de Justicia y Transparencia Institucional"],correcta:1,exp:"El ABNB, con sede en Sucre, es la entidad rectora del Sistema Nacional de Archivos boliviano."},
+  {cat:"LA",texto:"¿En qué ciudad se encuentra el Archivo y Biblioteca Nacionales de Bolivia (ABNB)?",ops:["La Paz","Cochabamba","Santa Cruz de la Sierra","Sucre"],correcta:3,exp:"El ABNB se encuentra en Sucre, capital constitucional de Bolivia, custodio del patrimonio documental del país."},
+  {cat:"LA",texto:"¿Qué establece la Ley N° 1178 (SAFCO) en relación con los documentos públicos?",ops:["Autoriza la destrucción de documentos después de 5 años","Obliga a las entidades públicas a custodiar y preservar sus documentos como respaldo de sus operaciones","Prohíbe la digitalización de documentos del Estado","Regula únicamente el archivo de documentos judiciales"],correcta:1,exp:"La Ley SAFCO obliga a las entidades públicas a respaldar, custodiar y preservar su documentación como evidencia de sus actos."},
+  {cat:"LA",texto:"¿Qué son los documentos de valor permanente según la normativa archivística boliviana?",ops:["Documentos en formato digital solamente","Aquellos que conservan valor histórico, probatorio o informativo y deben preservarse indefinidamente","Documentos firmados por el Presidente del Estado","Contratos vigentes de las entidades públicas"],correcta:1,exp:"Los documentos de valor permanente mantienen valor histórico, testimonial o informativo y se conservan indefinidamente en archivos históricos."},
+  {cat:"LA",texto:"¿Qué instrumento técnico permite identificar y organizar las series documentales en una entidad pública boliviana?",ops:["El organigrama institucional","El Cuadro de Clasificación Documental (CCD)","El balance general de la entidad","El plan operativo anual (POA)"],correcta:1,exp:"El CCD identifica, denomina y organiza jerárquicamente las series y subseries documentales producidas por una entidad."},
+  {cat:"LA",texto:"Según la normativa boliviana, ¿cuánto tiempo permanecen los documentos en el Archivo Central?",ops:["1 año","3 años","Entre 5 y 15 años según la tabla de retención","50 años obligatoriamente"],correcta:2,exp:"La normativa boliviana establece que los documentos permanecen entre 5 y 15 años en el Archivo Central según la TRD de cada entidad."},
+  {cat:"LA",texto:"¿Qué fase del ciclo de vida documental corresponde al Archivo Histórico en Bolivia?",ops:["Fase activa: documentos en uso cotidiano","Fase semiactiva: documentos consultados ocasionalmente","Fase inactiva: documentos con valor permanente sin vigencia administrativa","Fase de expurgo: documentos listos para destrucción"],correcta:2,exp:"El Archivo Histórico corresponde a la fase inactiva: documentos sin vigencia administrativa pero con valor histórico o cultural permanente."},
+  {cat:"LA",texto:"¿Qué se entiende por 'expurgo' en la gestión de archivos bolivianos?",ops:["El proceso de digitalizar documentos históricos","La eliminación controlada y autorizada de documentos que han perdido su valor administrativo, legal e histórico","La transferencia de documentos al ABNB","El inventario anual de documentos activos"],correcta:1,exp:"El expurgo es la eliminación controlada y legalmente autorizada de documentos que agotaron todos sus valores, previo dictamen técnico archivístico."},
+  {cat:"LA",texto:"¿Qué decreto supremo reglamentó la Ley N° 477 del Sistema Nacional de Archivos de Bolivia?",ops:["D.S. N° 1793","D.S. N° 2136","D.S. N° 23318-A","D.S. N° 3251"],correcta:1,exp:"El D.S. N° 2136 (19 nov. 2014) reglamentó la Ley N° 477 del Sistema Nacional de Archivos del Estado Plurinacional de Bolivia."}
+];
+
+let modo='estudiante', currentQ=0;
+let respuestas=new Array(20).fill(null);
+let revealed=new Array(20).fill(false);
+let timerInt=null, monInt=null, timerSecs=3600;
+let estudiantes=[], resultadoFinal=null;
+let datosEst={};
+
+function selectMode(m){
+  modo=m;
+  document.getElementById('card-est').classList.toggle('selected',m==='estudiante');
+  document.getElementById('card-doc').classList.toggle('selected',m==='docente');
+  document.getElementById('form-estudiante').style.display=m==='estudiante'?'block':'none';
+  document.getElementById('panel-docente').style.display=m==='docente'?'block':'none';
+}
+
+function agregarEst(){
+  const inp=document.getElementById('est-nombre');
+  const n=inp.value.trim(); if(!n) return;
+  if(estudiantes.find(e=>e.nombre.toLowerCase()===n.toLowerCase())){alert('Ya registrado.');return;}
+  estudiantes.push({nombre:n,nota:null});
+  inp.value='';
+  renderEstList();
+}
+function eliminarEst(i){estudiantes.splice(i,1);renderEstList();}
+function renderEstList(){
+  document.getElementById('est-list').innerHTML=estudiantes.map((e,i)=>
+    `<div class="est-tag"><span>${e.nombre}</span><button onclick="eliminarEst(${i})">×</button></div>`).join('');
+}
+
+function showScreen(id){
+  ['screen-inicio','screen-exam','screen-monitor','screen-resultado'].forEach(s=>document.getElementById(s).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function iniciar(){
+  if(modo==='docente'){showScreen('screen-monitor');initMonitor();return;}
+  const nombre=document.getElementById('f-nombre').value.trim();
+  if(!nombre){alert('Por favor ingresa tu nombre completo.');document.getElementById('f-nombre').focus();return;}
+  datosEst={
+    nombre:nombre,
+    ci:document.getElementById('f-ci').value.trim()||'—',
+    paralelo:document.getElementById('f-paralelo').value.trim()||'—',
+    carrera:document.getElementById('f-carrera').value.trim()||'—',
+    materia:document.getElementById('f-materia').value.trim()||'—',
+    correo:document.getElementById('f-correo').value.trim()||'—',
+    fechaInicio:new Date()
+  };
+  currentQ=0; respuestas=new Array(20).fill(null); revealed=new Array(20).fill(false);
+  timerSecs=3600; resultadoFinal=null;
+  showScreen('screen-exam'); renderQ(); startTimer();
+}
+
+function fmtTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+
+function startTimer(){
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{
+    timerSecs--; updateTimer();
+    if(timerSecs<=0){clearInterval(timerInt);finalizarExamen();}
+  },1000);
+}
+
+function updateTimer(){
+  const str=fmtTime(timerSecs);
+  const el=document.getElementById('timer');
+  if(el){el.textContent=str;el.className='timer-box '+(timerSecs<300?'tdn':timerSecs<600?'twn':'tok');}
+  const mel=document.getElementById('monitor-timer');
+  if(mel){mel.textContent=str;mel.style.color=timerSecs<300?'#ef4444':timerSecs<600?'#f59e0b':'#10b981';}
+}
+
+function renderQ(){
+  const q=PREGUNTAS[currentQ];
+  document.getElementById('prog-fill').style.width=((currentQ/20)*100)+'%';
+  document.getElementById('q-counter').textContent=`${currentQ+1} / 20`;
+  const letras=['A','B','C','D'];
+  let html=`<span class="cat-badge ${q.cat==='LA'?'badge-la':'badge-gd'}">${q.cat==='LA'?'⚖️ Leyes Archivísticas Bolivia':'📄 Gestión Documental'}</span>
+    <div class="q-num">Pregunta ${currentQ+1} de 20</div>
+    <div class="q-text">${q.texto}</div><div class="options">`;
+  q.ops.forEach((op,i)=>{
+    let cls='opt-btn';
+    if(revealed[currentQ]){if(i===q.correcta)cls+=' correct';else if(i===respuestas[currentQ]&&i!==q.correcta)cls+=' incorrect';}
+    else if(respuestas[currentQ]===i)cls+=' selected';
+    html+=`<button class="${cls}" onclick="seleccionar(${i})" ${revealed[currentQ]?'disabled':''}><span class="opt-letter">${letras[i]}</span>${op}</button>`;
+  });
+  html+=`</div>`;
+  if(revealed[currentQ]){
+    const ok=respuestas[currentQ]===q.correcta;
+    html+=`<div class="fb-box show ${ok?'fb-ok':'fb-bad'}">${ok?'✅ ¡Correcto! ':'❌ Incorrecto. Respuesta correcta: <strong>'+q.ops[q.correcta]+'</strong>. '}${q.exp}</div>`;
+  }
+  html+=`<div class="nav-btns">
+    <button class="btn-nav btn-prev" onclick="navQ(-1)" ${currentQ===0?'disabled':''}>← Anterior</button>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      ${!revealed[currentQ]?`<button class="btn-nav btn-confirm" onclick="confirmarRespuesta()">Confirmar ✓</button>`:''}
+      <button class="btn-nav btn-next" onclick="navQ(1)">${currentQ===19?'Ver Resultados ▶':'Siguiente →'}</button>
+    </div></div>`;
+  document.getElementById('exam-body').innerHTML=html;
+  document.getElementById('exam-body').scrollTop=0;
+}
+
+function seleccionar(i){if(revealed[currentQ])return;respuestas[currentQ]=i;renderQ();}
+function confirmarRespuesta(){if(respuestas[currentQ]===null){alert('Selecciona una opción.');return;}revealed[currentQ]=true;renderQ();}
+function navQ(dir){const nq=currentQ+dir;if(nq<0||nq>=20){if(dir>0)confirmarFin();return;}currentQ=nq;renderQ();}
+function confirmarFin(){
+  const sin=respuestas.filter(r=>r===null).length;
+  if(confirm(sin>0?`Tienes ${sin} pregunta(s) sin responder. ¿Finalizar de todas formas?`:'¿Finalizar el examen?'))finalizarExamen();
+}
+
+function finalizarExamen(){
+  clearInterval(timerInt);
+  let ok=0,bad=0,gd_ok=0,la_ok=0;
+  PREGUNTAS.forEach((q,i)=>{
+    if(respuestas[i]!==null){
+      if(respuestas[i]===q.correcta){ok++;if(q.cat==='GD')gd_ok++;else la_ok++;}
+      else bad++;
+    }
+  });
+  const puntaje=Math.round((ok/20)*100);
+  const tiempoUsado=3600-timerSecs;
+  resultadoFinal={ok,bad,gd_ok,la_ok,puntaje,sin:20-ok-bad,tiempoUsado};
+  showScreen('screen-resultado');
+  const color=puntaje>=90?'#f59e0b':puntaje>=70?'#10b981':puntaje>=51?'#f59e0b':'#ef4444';
+  const icon=puntaje>=90?'🥇':puntaje>=70?'🎉':puntaje>=51?'📚':'💪';
+  const nota=puntaje>=90?'¡Excelente!':puntaje>=70?'¡Muy bien!':puntaje>=51?'Aprobado':'Debe repasar';
+  document.getElementById('res-icon').textContent=icon;
+  document.getElementById('res-score').innerHTML=`<span style="color:${color}">${puntaje}</span><span style="font-size:1.4rem;color:#94a3b8"> / 100</span>`;
+  document.getElementById('res-label').textContent=nota+' — '+datosEst.nombre;
+  document.getElementById('res-bd').innerHTML=`
+    <div class="rb-card"><div class="rb-num" style="color:#10b981">${ok}</div><div class="rb-lbl">Correctas</div></div>
+    <div class="rb-card"><div class="rb-num" style="color:#ef4444">${bad}</div><div class="rb-lbl">Incorrectas</div></div>
+    <div class="rb-card"><div class="rb-num" style="color:#94a3b8">${20-ok-bad}</div><div class="rb-lbl">Sin resp.</div></div>
+    <div class="rb-card"><div class="rb-num" style="color:#a855f7">${gd_ok}/10</div><div class="rb-lbl">Gest. Doc.</div></div>
+    <div class="rb-card"><div class="rb-num" style="color:#fb923c">${la_ok}/10</div><div class="rb-lbl">Leyes Arch.</div></div>`;
+}
+
+/* ── PDF ── */
+function generarPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const r=resultadoFinal; const d=datosEst;
+  const W=210; const margen=18;
+  const fechaFin=new Date();
+  const tiempoStr=fmtTime(r.tiempoUsado);
+
+  // Fondo encabezado
+  doc.setFillColor(15,52,96);
+  doc.rect(0,0,W,42,'F');
+
+  // Logo
+  try{doc.addImage(LOGO_B64,'JPEG',margen,6,22,22);}catch(e){}
+
+  // Título institución
+  doc.setTextColor(0,212,255);
+  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.text('Instituto Técnico Superior de Formación Profesional',margen+26,13);
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(13);
+  doc.text('INTELIB',margen+26,20);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.setTextColor(148,163,184);
+  doc.text('Examen Virtual — Gestión Documental & Leyes Archivísticas Bolivianas',margen+26,26);
+
+  // Línea separadora encabezado
+  doc.setDrawColor(0,212,255);doc.setLineWidth(0.5);
+  doc.line(margen,32,W-margen,32);
+
+  // Fecha y hora
+  doc.setFontSize(7.5);doc.setTextColor(148,163,184);
+  doc.text(`Fecha: ${fechaFin.toLocaleDateString('es-BO')}   Hora finalización: ${fechaFin.toLocaleTimeString('es-BO')}   Tiempo empleado: ${tiempoStr}`,margen,38);
+
+  // ── DATOS DEL ESTUDIANTE ──
+  let y=50;
+  doc.setFillColor(26,26,46);doc.rect(margen,y-5,W-margen*2,38,'F');
+  doc.setDrawColor(168,85,247);doc.setLineWidth(0.4);
+  doc.rect(margen,y-5,W-margen*2,38,'S');
+
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(168,85,247);
+  doc.text('DATOS DEL ESTUDIANTE',margen+4,y+1);
+
+  const campos=[
+    ['Nombre completo',d.nombre],['CI / Carnet',d.ci],
+    ['Carrera',d.carrera],['Materia',d.materia],
+    ['Paralelo / Grupo',d.paralelo],['Correo electrónico',d.correo]
+  ];
+  doc.setFontSize(8);
+  campos.forEach(([lbl,val],i)=>{
+    const col=i%2===0?margen+4:margen+90;
+    const row=y+8+Math.floor(i/2)*9;
+    doc.setFont('helvetica','bold');doc.setTextColor(148,163,184);doc.text(lbl+':',col,row);
+    doc.setFont('helvetica','normal');doc.setTextColor(255,255,255);doc.text(val||'—',col+32,row);
+  });
+
+  // ── RESULTADO PRINCIPAL ──
+  y=96;
+  const puntaje=r.puntaje;
+  const color=puntaje>=90?[245,158,11]:puntaje>=70?[16,185,129]:puntaje>=51?[245,158,11]:[239,68,68];
+  const notaTxt=puntaje>=90?'EXCELENTE':puntaje>=70?'MUY BIEN':puntaje>=51?'APROBADO':'REPROBADO';
+
+  // Círculo puntaje
+  doc.setFillColor(...color);
+  doc.circle(W/2,y+18,18,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(255,255,255);
+  doc.text(`${puntaje}`,W/2,y+16,{align:'center'});
+  doc.setFontSize(8);doc.text('/100',W/2,y+22,{align:'center'});
+
+  doc.setFontSize(13);doc.setTextColor(...color);
+  doc.text(notaTxt,W/2,y+42,{align:'center'});
+
+  // ── ESTADÍSTICAS ──
+  y=148;
+  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(168,85,247);
+  doc.text('ESTADÍSTICAS DE RESPUESTAS',margen,y);
+  doc.setDrawColor(168,85,247);doc.line(margen,y+2,W-margen,y+2);
+
+  const stats=[
+    {lbl:'Correctas',val:r.ok,color:[16,185,129]},
+    {lbl:'Incorrectas',val:r.bad,color:[239,68,68]},
+    {lbl:'Sin responder',val:r.sin,color:[148,163,184]},
+    {lbl:'Gest. Documental',val:`${r.gd_ok}/10`,color:[168,85,247]},
+    {lbl:'Leyes Archivísticas',val:`${r.la_ok}/10`,color:[251,146,60]},
+    {lbl:'Tiempo empleado',val:tiempoStr,color:[0,212,255]}
+  ];
+  const bw=28,bh=16,gap=8;
+  const totalW=(bw+gap)*3-gap;
+  const startX=(W-totalW)/2;
+  stats.forEach((s,i)=>{
+    const col=i%3; const row=Math.floor(i/3);
+    const bx=startX+col*(bw+gap);
+    const by=y+7+row*22;
+    doc.setFillColor(26,26,46);doc.roundedRect(bx,by,bw,bh,2,2,'F');
+    doc.setDrawColor(...s.color);doc.setLineWidth(0.4);doc.roundedRect(bx,by,bw,bh,2,2,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...s.color);
+    doc.text(String(s.val),bx+bw/2,by+9,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(148,163,184);
+    doc.text(s.lbl,bx+bw/2,by+14,{align:'center'});
+  });
+
+  // Barra progreso visual
+  y=207;
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(148,163,184);
+  doc.text('Distribución de respuestas:',margen,y);
+  const barW=W-margen*2, barH=6;
+  const okW=(r.ok/20)*barW, badW=(r.bad/20)*barW, sinW=(r.sin/20)*barW;
+  doc.setFillColor(16,185,129);doc.rect(margen,y+3,okW,barH,'F');
+  doc.setFillColor(239,68,68);doc.rect(margen+okW,y+3,badW,barH,'F');
+  doc.setFillColor(100,116,139);doc.rect(margen+okW+badW,y+3,sinW,barH,'F');
+  doc.setFontSize(6.5);
+  doc.setTextColor(16,185,129);doc.text(`✓ Correctas ${Math.round((r.ok/20)*100)}%`,margen,y+14);
+  doc.setTextColor(239,68,68);doc.text(`✗ Incorrectas ${Math.round((r.bad/20)*100)}%`,margen+50,y+14);
+  doc.setTextColor(100,116,139);doc.text(`— Sin resp. ${Math.round((r.sin/20)*100)}%`,margen+105,y+14);
+
+  // ── PIE DE PÁGINA ──
+  doc.setFillColor(15,52,96);doc.rect(0,278,W,20,'F');
+  doc.setFontSize(7);doc.setTextColor(148,163,184);
+  doc.text('Instituto Técnico Superior de Formación Profesional INTELIB',W/2,285,{align:'center'});
+  doc.setTextColor(0,212,255);
+  doc.text('Documento generado automáticamente — Examen Virtual',W/2,290,{align:'center'});
+
+  // Guardar
+  const nombreArchivo=`resultado_${d.nombre.replace(/\s+/g,'_')}_${fechaFin.toISOString().slice(0,10)}.pdf`;
+  doc.save(nombreArchivo);
+}
+
+// ── MONITOR ──
+function initMonitor(){
+  timerSecs=3600; respuestas=new Array(20).fill(null); revealed=new Array(20).fill(false);
+  document.getElementById('monitor-grid').innerHTML=Array.from({length:20},(_,i)=>`<div class="q-dot" id="dot-${i}">${i+1}</div>`).join('');
+  const wrap=document.getElementById('stu-table-wrap');
+  wrap.style.display=estudiantes.length?'block':'none';
+  renderStuTable(); updateMonitorStats(); updateTimer();
+  clearInterval(monInt);
+  monInt=setInterval(()=>{timerSecs--;updateTimer();if(timerSecs<=0)clearInterval(monInt);},1000);
+}
+
+function renderStuTable(){
+  const tb=document.getElementById('stu-tbody');if(!tb)return;
+  tb.innerHTML=estudiantes.map((e,i)=>{
+    const n=e.nota;
+    const pc=n===null?'pn':n>=70?'pg':n>=51?'py':'pr';
+    const pt=n===null?'En curso':`${n}/100`;
+    return `<tr><td style="color:#94a3b8">${i+1}</td><td style="font-weight:600;color:#e2e8f0">${e.nombre}</td>
+      <td><div class="mini-prog-bg"><div class="mini-prog-fill" style="width:${e.progreso||0}%"></div></div></td>
+      <td><span class="s-pill ${pc}">${pt}</span></td>
+      <td style="font-size:0.76rem;color:#94a3b8">${n===null?'Examinándose':'Finalizado'}</td></tr>`;
+  }).join('');
+}
+
+function updateMonitorStats(){
+  let ans=0,ok=0,bad=0;
+  PREGUNTAS.forEach((q,i)=>{
+    const dot=document.getElementById('dot-'+i);if(!dot)return;
+    if(respuestas[i]!==null){ans++;if(respuestas[i]===q.correcta){ok++;dot.className='q-dot aok';}else{bad++;dot.className='q-dot abad';}}
+  });
+  document.getElementById('m-res').textContent=ans;
+  document.getElementById('m-ok').textContent=ok;
+  document.getElementById('m-bad').textContent=bad;
+  document.getElementById('m-pts').textContent=Math.round((ok/20)*100);
+  document.getElementById('m-pen').textContent=20-ans;
+}
+
+function exportarCSV(){
+  let csv='Nombre,Puntaje,Correctas,Incorrectas,Estado\n';
+  if(!estudiantes.length)csv+=`Sin estudiantes registrados,,,, \n`;
+  else estudiantes.forEach(e=>csv+=`"${e.nombre}",${e.nota??'En curso'},,,\n`);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`control_examen_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+
+function volverInicio(){
+  clearInterval(timerInt);clearInterval(monInt);
+  currentQ=0;respuestas=new Array(20).fill(null);revealed=new Array(20).fill(false);
+  timerSecs=3600;resultadoFinal=null;datosEst={};
+  showScreen('screen-inicio');
+}
+</script>
+</body>
+</html>
