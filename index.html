@@ -346,6 +346,9 @@ const PREGUNTAS = [
 const LISTA_KEY='intelib_lista_estudiantes';
 const PREFIJO_SESION='intelib_sesion_';
 
+/* ⚠️ PEGA AQUÍ LA URL DE TU GOOGLE APPS SCRIPT WEB APP (termina en /exec) */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxKaf3OVAUXBvWhAROZbxDRWsguI-i_G1UW99TENk5Pgz49zYomHQ92X6HVaFni5Ec1aw/exec';
+
 let modo='estudiante', currentQ=0;
 let respuestas=new Array(20).fill(null);
 let revealed=new Array(20).fill(false);
@@ -362,13 +365,29 @@ function showToast(msg){
   clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2500);
 }
 
-/* ── Verifica disponibilidad de almacenamiento compartido ── */
+/* ── Comunicación con Google Apps Script ── */
+async function apiCall(action, data){
+  data = data || {};
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS
+      body: JSON.stringify(Object.assign({action}, data))
+    });
+    const json = await res.json();
+    return json;
+  }catch(e){
+    return {ok:false, error:String(e)};
+  }
+}
+
+/* ── Verifica disponibilidad del backend ── */
 async function checkStorage(){
   if(storageOK!==null) return storageOK;
+  if(!API_URL || API_URL.indexOf('TU_ID_DE_DESPLIEGUE_AQUI')!==-1){storageOK=false;return false;}
   try{
-    if(!window.storage){storageOK=false;return false;}
-    await window.storage.set('intelib_ping', String(Date.now()), true);
-    storageOK=true;
+    const r = await apiCall('ping');
+    storageOK = !!(r && r.ok);
   }catch(e){storageOK=false;}
   return storageOK;
 }
@@ -387,29 +406,49 @@ async function cargarListaCompartida(){
   setSyncBadges(ok);
   if(!ok){listaCompartida=[];return;}
   try{
-    const r=await window.storage.get(LISTA_KEY, true);
-    listaCompartida = r&&r.value ? JSON.parse(r.value) : [];
+    const r = await apiCall('getLista');
+    listaCompartida = (r && r.ok && r.lista) ? r.lista : [];
   }catch(e){listaCompartida=[];}
 }
-async function guardarListaCompartida(){
-  if(!storageOK)return;
-  try{await window.storage.set(LISTA_KEY, JSON.stringify(listaCompartida), true);}catch(e){}
+async function agregarEstRemoto(nombre){
+  if(!storageOK)return {ok:false};
+  return await apiCall('addLista', {nombre});
+}
+async function eliminarEstRemoto(nombre){
+  if(!storageOK)return {ok:false};
+  return await apiCall('deleteLista', {nombre});
+}
+async function reiniciarListaRemoto(){
+  if(!storageOK)return {ok:false};
+  return await apiCall('resetLista');
 }
 
-/* ── Sesión individual de cada estudiante (clave por nombre) ── */
-function claveSesion(nombre){
-  return PREFIJO_SESION + nombre.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,150);
-}
+/* ── Sesión individual de cada estudiante ── */
 async function guardarSesion(nombre, data){
   if(!storageOK)return;
-  try{await window.storage.set(claveSesion(nombre), JSON.stringify(data), true);}catch(e){}
+  try{
+    await apiCall('saveSesion', { data: {
+      nombre,
+      ci:data.datosEst?.ci, paralelo:data.datosEst?.paralelo, carrera:data.datosEst?.carrera,
+      materia:data.datosEst?.materia, correo:data.datosEst?.correo,
+      respuestas:data.respuestas, revealed:data.revealed, timerSecs:data.timerSecs,
+      estado:data.estado, nota:data.nota, nota40:data.nota40
+    }});
+  }catch(e){}
 }
 async function leerSesion(nombre){
   if(!storageOK)return null;
   try{
-    const r=await window.storage.get(claveSesion(nombre), true);
-    return r&&r.value?JSON.parse(r.value):null;
+    const r = await apiCall('getSesion', {nombre});
+    return (r && r.ok) ? r.sesion : null;
   }catch(e){return null;}
+}
+async function leerTodasSesionesRemoto(){
+  if(!storageOK)return {};
+  try{
+    const r = await apiCall('getAllSesiones');
+    return (r && r.ok && r.sesiones) ? r.sesiones : {};
+  }catch(e){return {};}
 }
 
 /* ── UI: campo de nombre (selector si hay lista, input libre si no) ── */
@@ -447,16 +486,20 @@ async function agregarEst(){
   const inp=document.getElementById('est-nombre');
   const n=inp.value.trim(); if(!n) return;
   if(listaCompartida.find(e=>e.nombre.toLowerCase()===n.toLowerCase())){showToast('Ese nombre ya está en la lista.');return;}
-  listaCompartida.push({nombre:n});
+  const r = await agregarEstRemoto(n);
+  if(r && r.ok===false && r.error==='Ya existe'){showToast('Ese nombre ya está en la lista.');return;}
+  if(!storageOK){showToast('Sin conexión al servidor. Verifica la URL del Apps Script.');return;}
   inp.value='';
+  await cargarListaCompartida();
   renderEstList();
-  await guardarListaCompartida();
-  showToast(storageOK?'Estudiante agregado y sincronizado ✓':'Agregado (sin sincronización)');
+  showToast('Estudiante agregado y sincronizado ✓');
 }
 async function eliminarEst(i){
-  listaCompartida.splice(i,1);
+  const nombre = listaCompartida[i]?.nombre;
+  if(!nombre)return;
+  await eliminarEstRemoto(nombre);
+  await cargarListaCompartida();
   renderEstList();
-  await guardarListaCompartida();
 }
 function renderEstList(){
   const el=document.getElementById('est-list');if(!el)return;
@@ -500,7 +543,7 @@ function startTimer(){
   clearInterval(timerInt);
   timerInt=setInterval(async ()=>{
     timerSecs--; updateTimer();
-    if(timerSecs%5===0) await guardarSesion(datosEst.nombre,{datosEst,respuestas,revealed,timerSecs,estado:'en_curso',nota:null,nota40:null,actualizado:Date.now()});
+    if(timerSecs%10===0) await guardarSesion(datosEst.nombre,{datosEst,respuestas,revealed,timerSecs,estado:'en_curso',nota:null,nota40:null,actualizado:Date.now()});
     if(timerSecs<=0){clearInterval(timerInt);finalizarExamen();}
   },1000);
 }
@@ -679,7 +722,7 @@ async function initMonitor(){
   poblarSelectorEstudiantes();
   await refrescarMonitor();
   clearInterval(monInt);
-  monInt=setInterval(refrescarMonitor, 2000);
+  monInt=setInterval(refrescarMonitor, 4000);
 }
 
 function poblarSelectorEstudiantes(){
@@ -692,18 +735,14 @@ function poblarSelectorEstudiantes(){
 
 async function refrescarMonitor(){
   if(!storageOK){
-    document.getElementById('stu-tbody').innerHTML=`<tr><td colspan="6" class="empty-row">Sincronización no disponible — cada navegador tiene su propia memoria local.</td></tr>`;
+    document.getElementById('stu-tbody').innerHTML=`<tr><td colspan="6" class="empty-row">Sin conexión al servidor. Verifica la URL del Apps Script (constante API_URL) y que la implementación esté activa con acceso "Cualquier usuario".</td></tr>`;
     return;
   }
   await cargarListaCompartida();
   poblarSelectorEstudiantes();
 
-  // Leer sesión de cada estudiante registrado
-  sesionesCache={};
-  await Promise.all(listaCompartida.map(async e=>{
-    const s=await leerSesion(e.nombre);
-    if(s) sesionesCache[e.nombre]=s;
-  }));
+  // Una sola llamada trae todas las sesiones
+  sesionesCache = await leerTodasSesionesRemoto();
 
   renderStuTable();
   renderMonitorDetail();
@@ -812,8 +851,8 @@ async function exportarCSV(){
 
 async function reiniciarListaCompartida(){
   if(!confirm('Esto borrará la lista de estudiantes compartida (no borra los exámenes ya guardados). ¿Continuar?'))return;
-  listaCompartida=[];
-  await guardarListaCompartida();
+  await reiniciarListaRemoto();
+  await cargarListaCompartida();
   poblarSelectorEstudiantes();
   await refrescarMonitor();
   showToast('Lista reiniciada');
